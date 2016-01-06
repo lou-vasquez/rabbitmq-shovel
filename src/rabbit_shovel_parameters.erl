@@ -32,6 +32,8 @@
                     {requires, rabbit_registry},
                     {enables, recovery}]}).
 
+-define(DAY_IN_MS, 86400000).
+
 register() ->
     rabbit_registry:register(runtime_parameter, <<"shovel">>, ?MODULE).
 
@@ -169,7 +171,11 @@ parse({VHost, Name}, Def) ->
     {SrcFun, Queue, Table1} =
         case SrcQ of
             none -> {fun (_Conn, Ch) ->
-                             Ms = [#'queue.declare'{exclusive = true},
+                             Ms = [#'queue.declare'{
+                                        exclusive = true,
+                                        arguments = [{<<"x-expires">>, 
+                                                      long, 
+                                                      ?DAY_IN_MS}]},
                                    #'queue.bind'{routing_key = SrcXKey,
                                                  exchange    = SrcX}],
                              [amqp_channel:call(Ch, M) || M <- Ms]
